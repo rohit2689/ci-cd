@@ -18,7 +18,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH key authentication
-          port: ${{ secrets.SERVER_PORT }}
+          port: 22
           script: |
             cd ${{ secrets.SERVER_PATH }}
             
