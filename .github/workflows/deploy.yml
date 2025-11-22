@@ -9,24 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout your repository code
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Step 2: SSH and deploy on EC2
       - name: SSH and deploy
         uses: appleboy/ssh-action@v0.1.9
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SERVER_HOST }}          # Your EC2 public IP
+          username: ubuntu                          # EC2 user
+          key: ${{ secrets.SSH_PRIVATE_KEY }}      # SSH private key stored as GitHub secret
           port: 22
           script: |
-            # Load nvm
+            # Load nvm if Node.js installed via nvm
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm use --lts
 
-            # Go to project directory FIRST
-            cd /var/www/ci-cd || exit 1
+            # Go to project directory (using ~/ for home directory)
+            cd ~/var/www/ci-cd || exit 1
 
             # Pull latest code
             git fetch --all
@@ -39,8 +41,13 @@ jobs:
             # Ensure logs folder exists
             mkdir -p logs
 
+            # Install PM2 if missing
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+
             # Restart PM2
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
 
-            # Save PM2 process list
+            # Save PM2 process list for reboot
             pm2 save
