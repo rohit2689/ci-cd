@@ -106,7 +106,7 @@ export default function Page() {
                     ))}
                 </section>
 
-                <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-300">
                     Sample festival dates are static for demonstration. Some festivals follow lunar or regional calendars and vary each year.
                 </footer>
             </div>
