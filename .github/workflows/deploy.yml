@@ -9,34 +9,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout your repository code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: SSH and deploy on EC2
       - name: SSH and deploy
         uses: appleboy/ssh-action@v0.1.9
         with:
-          host: ${{ secrets.SERVER_HOST }}          # Your EC2 public IP
-          username: ubuntu                          # EC2 user
-          key: ${{ secrets.SSH_PRIVATE_KEY }}      # SSH private key stored as GitHub secret
+          host: ${{ secrets.SERVER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # Go to project directory
-            cd /var/www/ci-cd
-
-            # Load nvm if Node.js installed via nvm
+            # Load nvm
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm use --lts
 
-            # Clone repo if it doesn't exist, otherwise pull latest code
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/rohit2689/ci-cd.git .
-            else
-              git fetch --all
-              git reset --hard origin/main
-            fi
+            # Go to project directory FIRST
+            cd /var/www/ci-cd || exit 1
+
+            # Pull latest code
+            git fetch --all
+            git reset --hard origin/main
 
             # Install dependencies & build
             npm install --force
@@ -45,17 +39,8 @@ jobs:
             # Ensure logs folder exists
             mkdir -p logs
 
-            # Install PM2 if missing
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
+            # Restart PM2
+            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
 
-            # Start or reload app using PM2
-            if pm2 describe "nextjs-website" > /dev/null; then
-              pm2 reload ecosystem.config.js --env production
-            else
-              pm2 start ecosystem.config.js --env production
-            fi
-
-            # Save PM2 process list for reboot
+            # Save PM2 process list
             pm2 save
