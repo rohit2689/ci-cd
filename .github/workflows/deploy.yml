@@ -46,8 +46,12 @@ jobs:
               npm install -g pm2
             fi
 
-            # Restart PM2
-            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+            # Restart PM2 - try reload first, then restart if needed
+            if pm2 describe nextjs-website > /dev/null 2>&1; then
+              pm2 reload nextjs-website || pm2 restart nextjs-website
+            else
+              pm2 start ecosystem.config.js --env production
+            fi
 
             # Save PM2 process list for reboot
             pm2 save
